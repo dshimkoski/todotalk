@@ -6,7 +6,7 @@ const caller = taskRouter.createCaller({ prisma, session: null })
 
 describe('taskRouter', () => {
   let team: { id: string; name: string; slug: string }
-  let user: { id: string; email: string; name: string }
+  let user: { id: string; email: string; name: string | null }
 
   beforeEach(async () => {
     await cleanDatabase()

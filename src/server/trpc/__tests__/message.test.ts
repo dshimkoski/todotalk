@@ -6,7 +6,7 @@ const caller = messageRouter.createCaller({ prisma, session: null })
 
 describe('messageRouter', () => {
   let team: { id: string; name: string; slug: string }
-  let user: { id: string; email: string; name: string }
+  let user: { id: string; email: string; name: string | null }
 
   beforeEach(async () => {
     await cleanDatabase()
@@ -92,7 +92,7 @@ describe('messageRouter', () => {
       const page2 = await caller.list({
         teamId: team.id,
         limit: 3,
-        cursor: page1.nextCursor,
+        cursor: page1.nextCursor ?? undefined,
       })
 
       expect(page2.items).toHaveLength(2)

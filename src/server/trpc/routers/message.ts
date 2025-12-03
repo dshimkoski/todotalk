@@ -1,3 +1,6 @@
+import { serverEvents } from '@/server/events'
+import type { Message } from '@prisma/client'
+import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
 
@@ -65,21 +68,28 @@ export const messageRouter = router({
         },
       })
 
-      // TODO: Emit event for real-time updates
-      // eventEmitter.emit('message:created', { teamId: input.teamId, message })
+      // Emit event for real-time updates
+      serverEvents.emit('message:created', message)
 
       return message
     }),
 
-  // Placeholder for subscription endpoint
-  // Will be implemented with SSE/WebSocket in Phase 4
+  // Real-time subscription for new messages
   onCreated: publicProcedure
     .input(z.object({ teamId: z.string() }))
-    .subscription(async function* () {
-      // TODO: Implement with EventEmitter or Redis PubSub
-      // For now, just a placeholder
-      yield {
-        message: 'Subscription placeholder - will be implemented in Phase 4',
-      }
+    .subscription(({ input }) => {
+      return observable<Message>((emit) => {
+        const onMessage = (message: Message) => {
+          if (message.teamId === input.teamId) {
+            emit.next(message)
+          }
+        }
+
+        serverEvents.on('message:created', onMessage)
+
+        return () => {
+          serverEvents.off('message:created', onMessage)
+        }
+      })
     }),
 })
