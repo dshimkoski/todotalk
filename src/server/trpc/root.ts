@@ -1,5 +1,8 @@
-import { router } from './trpc'
 import { helloRouter } from './routers/hello'
+import { messageRouter } from './routers/message'
+import { taskRouter } from './routers/task'
+import { userRouter } from './routers/user'
+import { router } from './trpc'
 
 /**
  * This is the primary router for your server.
@@ -8,10 +11,9 @@ import { helloRouter } from './routers/hello'
  */
 export const appRouter = router({
   hello: helloRouter,
-  // TODO: Add more routers as we create them
-  // user: userRouter,
-  // task: taskRouter,
-  // message: messageRouter,
+  user: userRouter,
+  task: taskRouter,
+  message: messageRouter,
 })
 
 // Export type definition of API

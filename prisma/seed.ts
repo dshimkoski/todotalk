@@ -1,8 +1,8 @@
-import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { PrismaClient } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
+import 'dotenv/config'
+import { Pool } from 'pg'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -140,29 +140,31 @@ async function main() {
   await prisma.message.createMany({
     data: [
       {
-        content: 'Hey team! Just finished setting up the project. Ready to roll! 🚀',
+        content:
+          'Hey team! Just finished setting up the project. Ready to roll! 🚀',
         teamId: team1.id,
-        userId: alice.id,
+        authorId: alice.id,
       },
       {
-        content: 'Awesome work Alice! I\'ll start on the auth implementation.',
+        content: "Awesome work Alice! I'll start on the auth implementation.",
         teamId: team1.id,
-        userId: bob.id,
+        authorId: bob.id,
       },
       {
         content: 'Let me know if you need any help with the UI components!',
         teamId: team1.id,
-        userId: charlie.id,
+        authorId: charlie.id,
       },
       {
-        content: 'Starting the product documentation. Will share a draft by EOD.',
+        content:
+          'Starting the product documentation. Will share a draft by EOD.',
         teamId: team2.id,
-        userId: charlie.id,
+        authorId: charlie.id,
       },
       {
-        content: 'Perfect! I\'ll schedule some user interviews for next week.',
+        content: "Perfect! I'll schedule some user interviews for next week.",
         teamId: team2.id,
-        userId: alice.id,
+        authorId: alice.id,
       },
     ],
   })
