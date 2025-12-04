@@ -73,41 +73,76 @@ export function ChatPanel({ teamId, userId }: ChatPanelProps) {
 
   return (
     <div className="flex h-full flex-col rounded-lg bg-white shadow dark:bg-gray-800">
-      <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Team Chat
+      <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          # team-chat
         </h2>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto px-4 py-2">
         {messages.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400">
+          <p className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
             No messages yet. Start the conversation!
           </p>
         ) : (
           <>
-            {messages.reverse().map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.authorId === userId ? 'justify-end' : 'justify-start'}`}
-              >
+            {messages.reverse().map((msg, idx) => {
+              const prevMsg = messages[idx - 1]
+              const showHeader =
+                !prevMsg ||
+                prevMsg.authorId !== msg.authorId ||
+                new Date(msg.createdAt).getTime() -
+                  new Date(prevMsg.createdAt).getTime() >
+                  300000
+
+              return (
                 <div
-                  className={`max-w-xs rounded-lg px-4 py-2 ${
-                    msg.authorId === userId
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
+                  key={msg.id}
+                  className={`group hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
+                    showHeader ? 'mt-4' : 'mt-0.5'
                   }`}
                 >
-                  <div className="text-xs font-medium opacity-75">
-                    {msg.author.name || msg.author.email}
-                  </div>
-                  <div className="mt-1">{msg.content}</div>
-                  <div className="mt-1 text-xs opacity-75">
-                    {new Date(msg.createdAt).toLocaleTimeString()}
-                  </div>
+                  {showHeader ? (
+                    <div className="flex gap-2 px-2 py-1">
+                      <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-semibold text-white">
+                        {(msg.author.name ||
+                          msg.author.email)?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {msg.author.name || msg.author.email?.split('@')[0]}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-gray-100">
+                          {msg.content}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 px-2 py-0.5">
+                      <div className="w-8 flex-shrink-0 text-center">
+                        <span className="hidden text-xs text-gray-500 group-hover:inline dark:text-gray-400">
+                          {new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1 text-sm text-gray-900 dark:text-gray-100">
+                        {msg.content}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
             <div ref={messagesEndRef} />
           </>
         )}
@@ -122,27 +157,26 @@ export function ChatPanel({ teamId, userId }: ChatPanelProps) {
         </button>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="border-t border-gray-200 p-4 dark:border-gray-700"
-      >
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-          />
-          <button
-            type="submit"
-            disabled={!message.trim() || createMessage.isPending}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-          >
-            Send
-          </button>
-        </div>
-      </form>
+      <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+        <form onSubmit={handleSubmit}>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Message #team-chat"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            />
+            <button
+              type="submit"
+              disabled={!message.trim() || createMessage.isPending}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+            >
+              Send
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
