@@ -28,8 +28,11 @@ flyctl auth login
 ### 3. Create PostgreSQL Database
 
 ```bash
-# Create a Postgres app
+# Create a FREE Postgres app (not managed)
 flyctl postgres create --name todotalk-db --region sjc
+
+# When prompted, select:
+# - Development - Single node, 1x shared CPU, 256MB RAM, 1GB disk (FREE)
 
 # Note the connection string provided - you'll need it for secrets
 ```
@@ -40,13 +43,18 @@ flyctl postgres create --name todotalk-db --region sjc
 # Initialize the app (uses fly.toml)
 flyctl launch --no-deploy
 
+# When prompted:
+# - Use existing fly.toml? Yes
+# - Setup Postgres? No (we already created it)
+# - Setup Redis? No
+
 # Set secrets (replace with your values)
 flyctl secrets set \
   DATABASE_URL="postgres://..." \
   NEXTAUTH_SECRET="$(openssl rand -base64 32)" \
   NEXTAUTH_URL="https://todotalk.fly.dev"
 
-# Attach database
+# Attach the database we created earlier
 flyctl postgres attach todotalk-db
 ```
 
