@@ -151,7 +151,7 @@ export function ChatPanel({ teamId, userId }: ChatPanelProps) {
       {hasNextPage && (
         <button
           onClick={() => void fetchNextPage()}
-          className="mx-4 mb-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mx-4 mb-2 cursor-pointer text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         >
           Load more messages
         </button>
@@ -170,7 +170,7 @@ export function ChatPanel({ teamId, userId }: ChatPanelProps) {
             <button
               type="submit"
               disabled={!message.trim() || createMessage.isPending}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               Send
             </button>

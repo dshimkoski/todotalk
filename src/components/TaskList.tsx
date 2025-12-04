@@ -241,7 +241,7 @@ function SortableTask({ task, onDelete, onStatusChange }: SortableTaskProps) {
 
         <button
           onClick={() => onDelete(task.id)}
-          className="ml-4 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          className="ml-4 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           aria-label="Delete task"
         >
           <svg
