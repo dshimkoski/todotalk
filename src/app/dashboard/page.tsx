@@ -1,3 +1,5 @@
+import { CreateTaskForm } from '@/components/CreateTaskForm'
+import { TaskList } from '@/components/TaskList'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
@@ -64,6 +66,24 @@ export default async function DashboardPage({
     },
   })
 
+  // Get team members for assignee dropdown
+  const teamMembers = await prisma.teamMember.findMany({
+    where: {
+      teamId: selectedTeam.id,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  })
+
+  const users = teamMembers.map((tm) => tm.user)
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="mb-6">
@@ -83,63 +103,11 @@ export default async function DashboardPage({
               Tasks
             </h2>
 
-            {tasks.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400">
-                No tasks yet. Create one to get started!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="rounded-lg border border-gray-200 p-4 dark:border-gray-700"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {task.title}
-                        </h3>
-                        {task.description && (
-                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {task.description}
-                          </p>
-                        )}
-                        <div className="mt-2 flex items-center gap-2">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              task.status === 'done'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                                : task.status === 'in_progress'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {task.status.replace('_', ' ')}
-                          </span>
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              task.priority === 'high'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                                : task.priority === 'medium'
-                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {task.priority}
-                          </span>
-                          {task.assignee && (
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                              Assigned to{' '}
-                              {task.assignee.name || task.assignee.email}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="mb-4">
+              <CreateTaskForm teamId={selectedTeam.id} teamMembers={users} />
+            </div>
+
+            <TaskList initialTasks={tasks} teamId={selectedTeam.id} />
           </div>
         </div>
 
