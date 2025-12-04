@@ -1,0 +1,23 @@
+# Ignore all files by default
+*
+
+# Allow specific directories and files needed for Docker build
+!src/
+!public/
+!prisma/
+!package.json
+!package-lock.json
+!next.config.ts
+!postcss.config.mjs
+!tsconfig.json
+!.env.example
+
+# Exclude unnecessary files from allowed directories
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/node_modules/
+**/.next/
+**/dist/
+**/coverage/
+**/.git/

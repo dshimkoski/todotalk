@@ -41,7 +41,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     ctx: {
       ...ctx,
       // Infers the session is non-nullable
-      session: { ...ctx.session },
+      session: ctx.session,
     },
   })
 })

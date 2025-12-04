@@ -6,12 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./src/server/trpc/__tests__/setup.ts'],
-    // Run test files sequentially to avoid DB conflicts
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    // Note: Use --no-file-parallelism CLI flag for sequential execution
   },
   resolve: {
     alias: {
