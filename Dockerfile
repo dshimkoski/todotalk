@@ -39,9 +39,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy Prisma config (needed for migrations in Prisma 7)
+COPY prisma.config.ts ./prisma.config.ts
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
