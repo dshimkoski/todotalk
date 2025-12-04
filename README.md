@@ -7,7 +7,7 @@ A modern full-stack task management and team collaboration application built wit
 - 🔐 **Authentication** - Secure login with NextAuth.js v5
 - ✅ **Task Management** - Create, update, delete, and reorder tasks with drag-and-drop
 - 💬 **Real-time Chat** - Team messaging with Server-Sent Events (SSE)
-- 👥 **Team Collaboration** - Multi-team support with role-based access
+- 👥 **Team Collaboration** - Multi-team support with team switcher
 - ⚡ **Optimistic Updates** - Instant UI feedback with React 19 useOptimistic
 - 🎨 **Modern UI** - Tailwind CSS v4 with dark mode support
 - 🧪 **Well-tested** - 19 unit tests + 6 E2E tests with Playwright

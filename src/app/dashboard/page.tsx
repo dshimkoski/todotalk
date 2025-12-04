@@ -1,6 +1,6 @@
 import { ChatPanel } from '@/components/ChatPanel'
+import { ClientTaskList } from '@/components/ClientTaskList'
 import { CreateTaskForm } from '@/components/CreateTaskForm'
-import { TaskList } from '@/components/TaskList'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
@@ -96,9 +96,9 @@ export default async function DashboardPage({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Tasks Section */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
               Tasks
@@ -108,12 +108,12 @@ export default async function DashboardPage({
               <CreateTaskForm teamId={selectedTeam.id} teamMembers={users} />
             </div>
 
-            <TaskList initialTasks={tasks} teamId={selectedTeam.id} />
+            <ClientTaskList initialTasks={tasks} teamId={selectedTeam.id} />
           </div>
         </div>
 
         {/* Chat Section */}
-        <div className="flex h-[600px] lg:col-span-1">
+        <div className="h-[600px] lg:col-span-1">
           <ChatPanel
             teamId={selectedTeam.id}
             userId={session.user.id}
