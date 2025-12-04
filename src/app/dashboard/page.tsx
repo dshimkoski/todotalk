@@ -1,3 +1,4 @@
+import { ChatPanel } from '@/components/ChatPanel'
 import { CreateTaskForm } from '@/components/CreateTaskForm'
 import { TaskList } from '@/components/TaskList'
 import { auth } from '@/lib/auth'
@@ -112,15 +113,12 @@ export default async function DashboardPage({
         </div>
 
         {/* Chat Section */}
-        <div className="lg:col-span-1">
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-              Team Chat
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Chat functionality coming soon...
-            </p>
-          </div>
+        <div className="flex h-[600px] lg:col-span-1">
+          <ChatPanel
+            teamId={selectedTeam.id}
+            userId={session.user.id}
+            userName={session.user.name}
+          />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/Sidebar'
 import { auth } from '@/lib/auth'
+import { TRPCProvider } from '@/lib/trpc/provider'
 import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
 
@@ -27,9 +28,11 @@ export default async function DashboardLayout({
   const teams = userTeams.map((tm) => tm.team)
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar user={session.user} teams={teams} />
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+    <TRPCProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar user={session.user} teams={teams} />
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </TRPCProvider>
   )
 }
