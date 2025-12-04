@@ -14,6 +14,8 @@
     "prepare": "husky",
     "start": "next start",
     "test": "vitest --no-file-parallelism",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:ui": "vitest --ui --no-file-parallelism"
   },
   "lint-staged": {
@@ -47,6 +49,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",

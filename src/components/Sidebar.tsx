@@ -1,6 +1,7 @@
 'use client'
 
 import type { Team } from '@prisma/client'
+import { signOut } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -122,14 +123,13 @@ export function Sidebar({ user, teams }: SidebarProps) {
             </p>
           </div>
         </div>
-        <form action="/api/auth/signout" method="POST" className="mt-3">
-          <button
-            type="submit"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          >
-            Sign out
-          </button>
-        </form>
+        <button
+          onClick={() => void signOut({ callbackUrl: '/login' })}
+          type="button"
+          className="mt-3 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          Sign out
+        </button>
       </div>
     </div>
   )
