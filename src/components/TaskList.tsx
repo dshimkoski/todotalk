@@ -100,6 +100,10 @@ export function TaskList({ initialTasks, teamId }: TaskListProps) {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
+      // Find the order value of the task we're dropping onto
+      const targetTask = optimisticTasks.find((t) => t.id === over.id)
+      if (!targetTask) return
+
       startTransition(() => {
         setOptimisticTasks({
           type: 'reorder',
@@ -107,8 +111,7 @@ export function TaskList({ initialTasks, teamId }: TaskListProps) {
           overId: over.id as string,
         })
 
-        const newIndex = optimisticTasks.findIndex((t) => t.id === over.id)
-        void reorderTasks(active.id as string, newIndex, teamId)
+        void reorderTasks(active.id as string, targetTask.order, teamId)
       })
     }
   }
