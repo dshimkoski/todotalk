@@ -96,3 +96,71 @@ export async function updateTaskStatus(taskId: string, status: string) {
 
   revalidatePath('/dashboard')
 }
+
+export async function reorderTasks(
+  taskId: string,
+  newOrder: number,
+  teamId: string,
+) {
+  const session = await auth()
+  if (!session?.user) {
+    throw new Error('Unauthorized')
+  }
+
+  // Get the task being moved
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { order: true },
+  })
+
+  if (!task) {
+    throw new Error('Task not found')
+  }
+
+  const oldOrder = task.order
+
+  // Shift other tasks to make room
+  if (newOrder < oldOrder) {
+    // Moving up - shift tasks down
+    await prisma.task.updateMany({
+      where: {
+        teamId,
+        deletedAt: null,
+        order: {
+          gte: newOrder,
+          lt: oldOrder,
+        },
+      },
+      data: {
+        order: {
+          increment: 1,
+        },
+      },
+    })
+  } else if (newOrder > oldOrder) {
+    // Moving down - shift tasks up
+    await prisma.task.updateMany({
+      where: {
+        teamId,
+        deletedAt: null,
+        order: {
+          gt: oldOrder,
+          lte: newOrder,
+        },
+      },
+      data: {
+        order: {
+          decrement: 1,
+        },
+      },
+    })
+  }
+
+  // Update the task's order
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { order: newOrder },
+  })
+
+  revalidatePath('/dashboard')
+}
