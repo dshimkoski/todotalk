@@ -1,57 +1,160 @@
-import { auth, signOut } from '@/lib/auth'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ team?: string }>
+}) {
   const session = await auth()
 
-  if (!session) {
+  if (!session?.user) {
     redirect('/login')
   }
 
-  async function handleSignOut() {
-    'use server'
-    await signOut({ redirectTo: '/login' })
-  }
+  const params = await searchParams
+  const teamId = params.team
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <nav className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex">
-              <div className="flex shrink-0 items-center">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  TodoTalk
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-4 text-sm text-gray-700 dark:text-gray-300">
-                {session.user?.email}
-              </span>
-              <form action={handleSignOut}>
-                <button
-                  type="submit"
-                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-                >
-                  Sign out
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
+  // Get user's teams
+  const userTeams = await prisma.teamMember.findMany({
+    where: {
+      userId: session.user.id,
+    },
+    include: {
+      team: true,
+    },
+  })
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+  const selectedTeam =
+    userTeams.find((tm) => tm.team.id === teamId)?.team || userTeams[0]?.team
+
+  if (!selectedTeam) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome, {session.user?.name || session.user?.email}!
+            No teams found
           </h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            You are successfully authenticated.
+            You are not a member of any teams yet.
           </p>
         </div>
-      </main>
+      </div>
+    )
+  }
+
+  // Get tasks for selected team
+  const tasks = await prisma.task.findMany({
+    where: {
+      teamId: selectedTeam.id,
+      deletedAt: null,
+    },
+    orderBy: {
+      order: 'asc',
+    },
+    include: {
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  })
+
+  return (
+    <div className="h-full overflow-auto p-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {selectedTeam.name}
+        </h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Manage your team&apos;s tasks and chat
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Tasks Section */}
+        <div className="lg:col-span-2">
+          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Tasks
+            </h2>
+
+            {tasks.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400">
+                No tasks yet. Create one to get started!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 dark:text-white">
+                          {task.title}
+                        </h3>
+                        {task.description && (
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                              task.status === 'done'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                : task.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {task.status.replace('_', ' ')}
+                          </span>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                              task.priority === 'high'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                                : task.priority === 'medium'
+                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {task.priority}
+                          </span>
+                          {task.assignee && (
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              Assigned to{' '}
+                              {task.assignee.name || task.assignee.email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat Section */}
+        <div className="lg:col-span-1">
+          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+              Team Chat
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Chat functionality coming soon...
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

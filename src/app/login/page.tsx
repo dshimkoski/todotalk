@@ -22,10 +22,14 @@ export default async function LoginPage() {
         redirectTo: '/dashboard',
       })
     } catch (error) {
+      // NextAuth throws NEXT_REDIRECT on successful login, which is expected
+      // Only handle actual auth errors
       if (error instanceof AuthError) {
-        // NextAuth redirects on success, so this is actually an error
-        console.error('Login failed:', error)
+        console.error('Login failed:', error.type)
+        // In a real app, you'd show this error to the user
+        return
       }
+      // Re-throw redirect errors
       throw error
     }
   }
