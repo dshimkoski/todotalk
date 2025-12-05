@@ -2,7 +2,7 @@
 
 import type { Team } from '@prisma/client'
 import { signOut } from 'next-auth/react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 interface SidebarProps {
@@ -15,7 +15,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ user, teams }: SidebarProps) {
-  const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()

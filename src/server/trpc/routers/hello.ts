@@ -9,8 +9,8 @@ export const helloRouter = router({
         greeting: `Hello ${input.name ?? 'World'}!`,
       }
     }),
-  
-  status: publicProcedure.query(({ ctx }) => {
+
+  status: publicProcedure.query(() => {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

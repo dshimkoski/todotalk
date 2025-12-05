@@ -1,12 +1,11 @@
 import type { inferAsyncReturnType } from '@trpc/server'
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
 import { prisma } from '../db'
 
 /**
  * Creates context for an incoming request
  * @link https://trpc.io/docs/v11/context
  */
-export async function createContext(opts?: FetchCreateContextFnOptions) {
+export async function createContext() {
   // For demo purposes, we'll add session/auth later
   return {
     prisma,
