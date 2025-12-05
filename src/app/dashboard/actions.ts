@@ -3,103 +3,125 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
 import { serverEvents } from '@/server/events'
+import {
+  taskInputSchema,
+  taskStatusSchema,
+  type TaskStatus,
+} from '@/server/trpc/schemas'
 import { revalidatePath } from 'next/cache'
 
-export async function createTask(formData: FormData) {
+/**
+ * Ensures user is authenticated before performing action
+ * @throws Error if user is not authenticated
+ */
+async function requireAuth() {
   const session = await auth()
   if (!session?.user) {
     throw new Error('Unauthorized')
   }
+  return session
+}
 
-  const title = formData.get('title') as string
-  const description = formData.get('description') as string
-  const teamId = formData.get('teamId') as string
-  const priority = (formData.get('priority') as string) || 'medium'
-  const assigneeId = formData.get('assigneeId') as string | null
+/**
+ * Helper to emit task event and revalidate dashboard
+ */
+function emitTaskEvent(
+  event: 'task:created' | 'task:updated' | 'task:deleted' | 'task:reordered',
+  payload: { taskId?: string; teamId: string },
+) {
+  serverEvents.emit(event, payload)
+  revalidatePath('/dashboard')
+}
 
-  // Get the current max order for this team
+/**
+ * Get next available order for a task in a team
+ */
+async function getNextTaskOrder(teamId: string): Promise<number> {
   const maxOrderTask = await prisma.task.findFirst({
     where: { teamId, deletedAt: null },
     orderBy: { order: 'desc' },
     select: { order: true },
   })
+  return (maxOrderTask?.order ?? -1) + 1
+}
 
-  const newOrder = (maxOrderTask?.order ?? -1) + 1
+export async function createTask(formData: FormData) {
+  await requireAuth()
+
+  const rawData = {
+    title: formData.get('title') as string,
+    description: formData.get('description') as string | undefined,
+    teamId: formData.get('teamId') as string,
+    priority: (formData.get('priority') as string) || 'medium',
+    assigneeId: formData.get('assigneeId') as string | null,
+  }
+
+  // Validate input using shared schema
+  const input = taskInputSchema.parse({
+    ...rawData,
+    assigneeId: rawData.assigneeId || undefined,
+  })
+
+  const order = await getNextTaskOrder(input.teamId)
 
   const task = await prisma.task.create({
     data: {
-      title,
-      description: description || null,
-      teamId,
-      priority: priority as 'low' | 'medium' | 'high',
-      assigneeId: assigneeId || null,
-      status: 'todo',
-      order: newOrder,
+      ...input,
+      order,
     },
   })
 
-  serverEvents.emit('task:created', { taskId: task.id, teamId })
-  revalidatePath('/dashboard')
+  emitTaskEvent('task:created', { taskId: task.id, teamId: task.teamId })
   return task
 }
 
 export async function updateTask(formData: FormData) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
-  }
+  await requireAuth()
 
   const id = formData.get('id') as string
-  const title = formData.get('title') as string
-  const description = formData.get('description') as string
-  const status = formData.get('status') as string
-  const priority = formData.get('priority') as string
-  const assigneeId = formData.get('assigneeId') as string | null
+  const data = {
+    title: formData.get('title') as string,
+    description: formData.get('description') as string | undefined,
+    status: formData.get('status') as TaskStatus,
+    priority: formData.get('priority') as 'low' | 'medium' | 'high',
+    assigneeId: formData.get('assigneeId') as string | null,
+  }
 
   const task = await prisma.task.update({
     where: { id },
     data: {
-      title,
-      description: description || null,
-      status: status as 'todo' | 'in_progress' | 'done',
-      priority: priority as 'low' | 'medium' | 'high',
-      assigneeId: assigneeId || null,
+      ...data,
+      assigneeId: data.assigneeId || null,
     },
   })
 
-  serverEvents.emit('task:updated', { taskId: task.id, teamId: task.teamId })
-  revalidatePath('/dashboard')
+  emitTaskEvent('task:updated', { taskId: task.id, teamId: task.teamId })
   return task
 }
 
 export async function deleteTask(taskId: string) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
-  }
+  await requireAuth()
 
   const task = await prisma.task.update({
     where: { id: taskId },
     data: { deletedAt: new Date() },
   })
 
-  serverEvents.emit('task:deleted', { taskId, teamId: task.teamId })
-  revalidatePath('/dashboard')
+  emitTaskEvent('task:deleted', { taskId, teamId: task.teamId })
 }
 
 export async function updateTaskStatus(taskId: string, status: string) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
-  }
+  await requireAuth()
+
+  // Validate status using schema
+  const validStatus = taskStatusSchema.parse(status)
 
   const task = await prisma.task.update({
     where: { id: taskId },
-    data: { status: status as 'todo' | 'in_progress' | 'done' },
+    data: { status: validStatus },
   })
 
-  serverEvents.emit('task:updated', { taskId, teamId: task.teamId })
-  revalidatePath('/dashboard')
+  emitTaskEvent('task:updated', { taskId, teamId: task.teamId })
 }
 
 export async function reorderTasks(
@@ -107,10 +129,7 @@ export async function reorderTasks(
   newOrder: number,
   teamId: string,
 ) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
-  }
+  await requireAuth()
 
   // Get the task being moved
   const task = await prisma.task.findUnique({
@@ -123,6 +142,11 @@ export async function reorderTasks(
   }
 
   const oldOrder = task.order
+
+  // Skip if no movement
+  if (oldOrder === newOrder) {
+    return
+  }
 
   // Shift other tasks to make room
   if (newOrder < oldOrder) {
@@ -142,7 +166,7 @@ export async function reorderTasks(
         },
       },
     })
-  } else if (newOrder > oldOrder) {
+  } else {
     // Moving down - shift tasks up
     await prisma.task.updateMany({
       where: {
@@ -167,6 +191,5 @@ export async function reorderTasks(
     data: { order: newOrder },
   })
 
-  serverEvents.emit('task:reordered', { teamId })
-  revalidatePath('/dashboard')
+  emitTaskEvent('task:reordered', { teamId })
 }
