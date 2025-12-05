@@ -3,6 +3,16 @@ import { auth } from '@/lib/auth'
 import { TRPCProvider } from '@/lib/trpc/provider'
 import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
+import { cache } from 'react'
+
+// Cache team fetching for the request
+const getUserTeamsForLayout = cache(async (userId: string) => {
+  const userTeams = await prisma.teamMember.findMany({
+    where: { userId },
+    include: { team: true },
+  })
+  return userTeams.map((tm) => tm.team)
+})
 
 export default async function DashboardLayout({
   children,
@@ -15,17 +25,7 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Get user's teams
-  const userTeams = await prisma.teamMember.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    include: {
-      team: true,
-    },
-  })
-
-  const teams = userTeams.map((tm) => tm.team)
+  const teams = await getUserTeamsForLayout(session.user.id)
 
   return (
     <TRPCProvider>

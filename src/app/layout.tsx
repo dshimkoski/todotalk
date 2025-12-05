@@ -16,7 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'TodoTalk',
   description: 'Team task management and real-time chat collaboration',
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 'https://todotalk.fly.dev',
+  ),
 }
+
+// Enable static optimization for layout
+export const dynamic = 'auto'
 
 export default function RootLayout({
   children,

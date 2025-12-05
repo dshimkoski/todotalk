@@ -4,7 +4,49 @@ import { CreateTaskForm } from '@/components/CreateTaskForm'
 import { ViewToggle } from '@/components/ViewToggle'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
+import { userPublicSelect } from '@/server/trpc/selects'
 import { redirect } from 'next/navigation'
+import { cache } from 'react'
+
+// Revalidate every 30 seconds for fresh data without sacrificing performance
+export const revalidate = 30
+
+// Cache user teams for the request lifecycle
+const getUserTeams = cache(async (userId: string) => {
+  return prisma.teamMember.findMany({
+    where: { userId },
+    include: { team: true },
+  })
+})
+
+// Cache tasks with optimized query
+const getTeamTasks = cache(async (teamId: string) => {
+  return prisma.task.findMany({
+    where: {
+      teamId,
+      deletedAt: null,
+    },
+    orderBy: { order: 'asc' },
+    include: {
+      assignee: {
+        select: userPublicSelect,
+      },
+    },
+  })
+})
+
+// Cache team members
+const getTeamMembers = cache(async (teamId: string) => {
+  const members = await prisma.teamMember.findMany({
+    where: { teamId },
+    include: {
+      user: {
+        select: userPublicSelect,
+      },
+    },
+  })
+  return members.map((tm) => tm.user)
+})
 
 export default async function DashboardPage({
   searchParams,
@@ -21,15 +63,8 @@ export default async function DashboardPage({
   const teamId = params.team
   const view = params.view
 
-  // Get user's teams
-  const userTeams = await prisma.teamMember.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    include: {
-      team: true,
-    },
-  })
+  // Use cached data fetching functions
+  const userTeams = await getUserTeams(session.user.id)
 
   const selectedTeam =
     userTeams.find((tm) => tm.team.id === teamId)?.team || userTeams[0]?.team
@@ -49,43 +84,11 @@ export default async function DashboardPage({
     )
   }
 
-  // Get tasks for selected team
-  const tasks = await prisma.task.findMany({
-    where: {
-      teamId: selectedTeam.id,
-      deletedAt: null,
-    },
-    orderBy: {
-      order: 'asc',
-    },
-    include: {
-      assignee: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  })
-
-  // Get team members for assignee dropdown
-  const teamMembers = await prisma.teamMember.findMany({
-    where: {
-      teamId: selectedTeam.id,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  })
-
-  const users = teamMembers.map((tm) => tm.user)
+  // Fetch data in parallel for better performance
+  const [tasks, users] = await Promise.all([
+    getTeamTasks(selectedTeam.id),
+    getTeamMembers(selectedTeam.id),
+  ])
 
   return (
     <div className="flex h-full flex-col">
