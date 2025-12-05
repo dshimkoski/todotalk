@@ -2,6 +2,8 @@
 
 A modern full-stack task management and team collaboration application built with Next.js 16, React 19, and tRPC v11.
 
+**🚀 Live Demo:** [https://todotalk.fly.dev](https://todotalk.fly.dev)
+
 ## Features
 
 - 🔐 **Authentication** - Secure login with NextAuth.js v5

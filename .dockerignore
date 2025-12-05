@@ -5,6 +5,7 @@
 !src/
 !public/
 !prisma/
+!prisma.config.ts
 !package.json
 !package-lock.json
 !next.config.ts
