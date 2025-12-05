@@ -1,6 +1,7 @@
 import { ChatPanel } from '@/components/ChatPanel'
 import { ClientTaskList } from '@/components/ClientTaskList'
 import { CreateTaskForm } from '@/components/CreateTaskForm'
+import { ViewToggle } from '@/components/ViewToggle'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
@@ -8,7 +9,7 @@ import { redirect } from 'next/navigation'
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ team?: string }>
+  searchParams: Promise<{ team?: string; view?: string }>
 }) {
   const session = await auth()
 
@@ -18,6 +19,7 @@ export default async function DashboardPage({
 
   const params = await searchParams
   const teamId = params.team
+  const view = params.view
 
   // Get user's teams
   const userTeams = await prisma.teamMember.findMany({
@@ -86,34 +88,52 @@ export default async function DashboardPage({
   const users = teamMembers.map((tm) => tm.user)
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {selectedTeam.name}
-        </h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Manage your team&apos;s tasks and chat
-        </p>
+    <div className="flex h-full flex-col">
+      <div className="border-b border-gray-700 bg-gray-800 px-4 py-4 shadow-sm sm:px-6 sm:py-5 lg:flex lg:h-16 lg:items-center lg:px-8 lg:py-0 dark:border-gray-700 dark:bg-gray-800">
+        <div className="mx-auto flex items-center justify-center lg:mx-0 lg:w-full lg:justify-start">
+          <h1 className="min-w-0 text-center text-xl font-bold text-white sm:text-2xl lg:text-left dark:text-white">
+            {selectedTeam.name}
+          </h1>
+        </div>
+        <div className="mx-auto mt-3 max-w-md lg:hidden">
+          <ViewToggle teamId={selectedTeam.id} />
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Tasks Section */}
-        <div className="lg:col-span-1">
-          <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-              Tasks
-            </h2>
+      <div className="grid flex-1 gap-4 overflow-hidden p-4 sm:gap-6 sm:p-8 lg:grid-cols-2">
+        {/* Todos Section */}
+        <div
+          className={`flex flex-col overflow-hidden lg:col-span-1 ${
+            view === 'talk' ? 'hidden lg:flex' : ''
+          }`}
+        >
+          <div className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
+            <div className="border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+                Todo
+              </h2>
+            </div>
 
-            <div className="mb-4">
+            <div className="border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
               <CreateTaskForm teamId={selectedTeam.id} teamMembers={users} />
             </div>
 
-            <ClientTaskList initialTasks={tasks} teamId={selectedTeam.id} />
+            <div className="scrollbar flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
+              <ClientTaskList initialTasks={tasks} teamId={selectedTeam.id} />
+            </div>
           </div>
         </div>
 
-        {/* Chat Section */}
-        <div className="h-[600px] lg:col-span-1">
+        {/* Talk Section */}
+        <div
+          className={`flex flex-col overflow-hidden lg:col-span-1 ${
+            view !== 'talk' && view !== undefined
+              ? 'hidden lg:flex'
+              : view === undefined
+                ? 'hidden lg:flex'
+                : ''
+          }`}
+        >
           <ChatPanel
             teamId={selectedTeam.id}
             userId={session.user.id}

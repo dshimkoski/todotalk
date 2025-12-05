@@ -5,6 +5,7 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -18,7 +19,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '@prisma/client'
-import { useOptimistic, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useOptimistic, useTransition } from 'react'
 import {
   deleteTask,
   reorderTasks,
@@ -40,6 +42,7 @@ interface TaskListProps {
 
 export function TaskList({ initialTasks, teamId }: TaskListProps) {
   const [, startTransition] = useTransition()
+  const router = useRouter()
   const [optimisticTasks, setOptimisticTasks] = useOptimistic(
     initialTasks,
     (
@@ -75,8 +78,41 @@ export function TaskList({ initialTasks, teamId }: TaskListProps) {
     },
   )
 
+  // Listen for SSE task events
+  useEffect(() => {
+    const eventSource = new EventSource(`/api/events?teamId=${teamId}`)
+
+    eventSource.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data)
+
+      // Refresh tasks when any task event occurs
+      if (
+        data.type === 'task:updated' ||
+        data.type === 'task:created' ||
+        data.type === 'task:deleted' ||
+        data.type === 'task:reordered'
+      ) {
+        router.refresh()
+      }
+    })
+
+    eventSource.onerror = () => {
+      eventSource.close()
+    }
+
+    return () => {
+      eventSource.close()
+    }
+  }, [teamId, router])
+
   const sensors = useSensors(
     useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -119,7 +155,7 @@ export function TaskList({ initialTasks, teamId }: TaskListProps) {
   if (optimisticTasks.length === 0) {
     return (
       <p className="text-gray-500 dark:text-gray-400">
-        No tasks yet. Create one to get started!
+        No todos yet. Create one to get started!
       </p>
     )
   }

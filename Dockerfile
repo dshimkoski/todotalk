@@ -16,8 +16,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Generate Prisma Client (needs DATABASE_URL for Prisma 7 config)
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+RUN npx prisma generate --config prisma/prisma.config.ts
 
 # Build the Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -34,16 +35,21 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy Prisma config (needed for migrations in Prisma 7)
-COPY prisma.config.ts ./prisma.config.ts
+# Copy Prisma and seed dependencies
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
+
+# Standalone includes most runtime deps, but not CLI tools
+# Copy full node_modules for migrations/seeding (Prisma 7 has many deps)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app

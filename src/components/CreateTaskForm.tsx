@@ -28,7 +28,7 @@ export function CreateTaskForm({ teamId, teamMembers }: CreateTaskFormProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-600 hover:border-blue-500 hover:text-blue-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-blue-500 dark:hover:text-blue-400"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/30 p-5 text-gray-300 transition-all hover:border-blue-500 hover:bg-blue-900/20 hover:text-blue-400 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
       >
         <svg
           className="h-5 w-5"
@@ -43,7 +43,7 @@ export function CreateTaskForm({ teamId, teamMembers }: CreateTaskFormProps) {
             d="M12 4v16m8-8H4"
           />
         </svg>
-        Add Task
+        Add Todo
       </button>
     )
   }
@@ -61,7 +61,7 @@ export function CreateTaskForm({ teamId, teamMembers }: CreateTaskFormProps) {
           <input
             type="text"
             name="title"
-            placeholder="Task title"
+            placeholder="Todo title"
             required
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />

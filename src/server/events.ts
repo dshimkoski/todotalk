@@ -4,7 +4,10 @@ import { EventEmitter } from 'events'
 // Event types for type-safe event emitter
 export interface ServerEvents {
   'message:created': (message: Message) => void
-  'task:updated': (taskId: string) => void
+  'task:updated': (data: { taskId: string; teamId: string }) => void
+  'task:created': (data: { taskId: string; teamId: string }) => void
+  'task:deleted': (data: { taskId: string; teamId: string }) => void
+  'task:reordered': (data: { teamId: string }) => void
 }
 
 // Type-safe event emitter

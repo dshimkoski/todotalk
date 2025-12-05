@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/server/db'
+import { serverEvents } from '@/server/events'
 import { revalidatePath } from 'next/cache'
 
 export async function createTask(formData: FormData) {
@@ -37,6 +38,7 @@ export async function createTask(formData: FormData) {
     },
   })
 
+  serverEvents.emit('task:created', { taskId: task.id, teamId })
   revalidatePath('/dashboard')
   return task
 }
@@ -65,6 +67,7 @@ export async function updateTask(formData: FormData) {
     },
   })
 
+  serverEvents.emit('task:updated', { taskId: task.id, teamId: task.teamId })
   revalidatePath('/dashboard')
   return task
 }
@@ -75,11 +78,12 @@ export async function deleteTask(taskId: string) {
     throw new Error('Unauthorized')
   }
 
-  await prisma.task.update({
+  const task = await prisma.task.update({
     where: { id: taskId },
     data: { deletedAt: new Date() },
   })
 
+  serverEvents.emit('task:deleted', { taskId, teamId: task.teamId })
   revalidatePath('/dashboard')
 }
 
@@ -89,11 +93,12 @@ export async function updateTaskStatus(taskId: string, status: string) {
     throw new Error('Unauthorized')
   }
 
-  await prisma.task.update({
+  const task = await prisma.task.update({
     where: { id: taskId },
     data: { status: status as 'todo' | 'in_progress' | 'done' },
   })
 
+  serverEvents.emit('task:updated', { taskId, teamId: task.teamId })
   revalidatePath('/dashboard')
 }
 
@@ -162,5 +167,6 @@ export async function reorderTasks(
     data: { order: newOrder },
   })
 
+  serverEvents.emit('task:reordered', { teamId })
   revalidatePath('/dashboard')
 }

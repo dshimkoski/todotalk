@@ -31,7 +31,7 @@ export default async function DashboardLayout({
     <TRPCProvider>
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar user={session.user} teams={teams} />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </TRPCProvider>
   )

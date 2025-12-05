@@ -39,7 +39,59 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Listen for task update events
+      const onTaskUpdated = (eventData: { taskId: string; teamId: string }) => {
+        if (eventData.teamId === teamId) {
+          const data = `data: ${JSON.stringify({ type: 'task:updated', data: eventData })}\n\n`
+          try {
+            controller.enqueue(encoder.encode(data))
+          } catch (error) {
+            console.error('Error sending SSE task update:', error)
+          }
+        }
+      }
+
+      // Listen for task created events
+      const onTaskCreated = (eventData: { taskId: string; teamId: string }) => {
+        if (eventData.teamId === teamId) {
+          const data = `data: ${JSON.stringify({ type: 'task:created', data: eventData })}\n\n`
+          try {
+            controller.enqueue(encoder.encode(data))
+          } catch (error) {
+            console.error('Error sending SSE task created:', error)
+          }
+        }
+      }
+
+      // Listen for task deleted events
+      const onTaskDeleted = (eventData: { taskId: string; teamId: string }) => {
+        if (eventData.teamId === teamId) {
+          const data = `data: ${JSON.stringify({ type: 'task:deleted', data: eventData })}\n\n`
+          try {
+            controller.enqueue(encoder.encode(data))
+          } catch (error) {
+            console.error('Error sending SSE task deleted:', error)
+          }
+        }
+      }
+
+      // Listen for task reordered events
+      const onTaskReordered = (eventData: { teamId: string }) => {
+        if (eventData.teamId === teamId) {
+          const data = `data: ${JSON.stringify({ type: 'task:reordered', data: eventData })}\n\n`
+          try {
+            controller.enqueue(encoder.encode(data))
+          } catch (error) {
+            console.error('Error sending SSE task reordered:', error)
+          }
+        }
+      }
+
       serverEvents.on('message:created', onMessage)
+      serverEvents.on('task:updated', onTaskUpdated)
+      serverEvents.on('task:created', onTaskCreated)
+      serverEvents.on('task:deleted', onTaskDeleted)
+      serverEvents.on('task:reordered', onTaskReordered)
 
       // Send keepalive ping every 30 seconds
       const keepaliveInterval = setInterval(() => {
@@ -53,6 +105,10 @@ export async function GET(request: NextRequest) {
       // Cleanup on connection close
       request.signal.addEventListener('abort', () => {
         serverEvents.off('message:created', onMessage)
+        serverEvents.off('task:updated', onTaskUpdated)
+        serverEvents.off('task:created', onTaskCreated)
+        serverEvents.off('task:deleted', onTaskDeleted)
+        serverEvents.off('task:reordered', onTaskReordered)
         clearInterval(keepaliveInterval)
         controller.close()
       })
