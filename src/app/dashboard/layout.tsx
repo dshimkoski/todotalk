@@ -1,7 +1,7 @@
 import { Sidebar } from '@/components/Sidebar'
 import { auth } from '@/lib/auth'
 import { TRPCProvider } from '@/lib/trpc/provider'
-import { prisma } from '@/server/db'
+import { ensureDatabaseConnection, prisma } from '@/server/db'
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
 
@@ -23,6 +23,14 @@ export default async function DashboardLayout({
 
   if (!session?.user) {
     redirect('/login')
+  }
+
+  // Ensure database connection is ready
+  try {
+    await ensureDatabaseConnection()
+  } catch (error) {
+    console.error('Database connection failed in layout:', error)
+    // Let the page handle the error display
   }
 
   const teams = await getUserTeamsForLayout(session.user.id)

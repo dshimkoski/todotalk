@@ -3,7 +3,7 @@ import { ClientTaskList } from '@/components/ClientTaskList'
 import { CreateTaskForm } from '@/components/CreateTaskForm'
 import { ViewToggle } from '@/components/ViewToggle'
 import { auth } from '@/lib/auth'
-import { prisma } from '@/server/db'
+import { ensureDatabaseConnection, prisma } from '@/server/db'
 import { userPublicSelect } from '@/server/trpc/selects'
 import { redirect } from 'next/navigation'
 import { cache } from 'react'
@@ -57,6 +57,26 @@ export default async function DashboardPage({
 
   if (!session?.user) {
     redirect('/login')
+  }
+
+  // Ensure database connection is ready (handles cold starts)
+  try {
+    await ensureDatabaseConnection()
+  } catch (error) {
+    console.error('Database connection failed:', error)
+    return (
+      <div className="flex h-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-gray-700 dark:border-t-blue-400"></div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Connecting to database...
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            The database is starting up. Please refresh in a moment.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   const params = await searchParams
