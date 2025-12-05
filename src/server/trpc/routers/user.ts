@@ -1,16 +1,15 @@
-import { z } from 'zod'
+import { userProfileSchema, userUpdateSchema } from '../schemas'
+import { userPublicSelect } from '../selects'
 import { publicProcedure, router } from '../trpc'
 
 export const userRouter = router({
   getProfile: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(userProfileSchema)
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.userId },
         select: {
-          id: true,
-          email: true,
-          name: true,
+          ...userPublicSelect,
           createdAt: true,
           updatedAt: true,
         },
@@ -24,22 +23,15 @@ export const userRouter = router({
     }),
 
   updateProfile: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        name: z.string().optional(),
-      }),
-    )
+    .input(userUpdateSchema)
     .mutation(async ({ ctx, input }) => {
+      const { userId, ...data } = input
+
       const user = await ctx.prisma.user.update({
-        where: { id: input.userId },
-        data: {
-          name: input.name,
-        },
+        where: { id: userId },
+        data,
         select: {
-          id: true,
-          email: true,
-          name: true,
+          ...userPublicSelect,
           updatedAt: true,
         },
       })
@@ -50,9 +42,7 @@ export const userRouter = router({
   listUsers: publicProcedure.query(async ({ ctx }) => {
     const users = await ctx.prisma.user.findMany({
       select: {
-        id: true,
-        email: true,
-        name: true,
+        ...userPublicSelect,
         createdAt: true,
       },
       orderBy: {

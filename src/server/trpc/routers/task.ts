@@ -1,60 +1,37 @@
 import { z } from 'zod'
+import { taskInputSchema, taskListSchema, taskReorderSchema } from '../schemas'
+import {
+  taskWithAssigneeSelect,
+  taskWithRelationsSelect,
+  userPublicSelect,
+} from '../selects'
 import { publicProcedure, router } from '../trpc'
 
-const taskStatusEnum = z.enum(['todo', 'in_progress', 'done'])
-const taskPriorityEnum = z.enum(['low', 'medium', 'high'])
-
 export const taskRouter = router({
-  list: publicProcedure
-    .input(
-      z.object({
-        teamId: z.string(),
-        status: taskStatusEnum.optional(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const tasks = await ctx.prisma.task.findMany({
-        where: {
-          teamId: input.teamId,
-          status: input.status,
-          deletedAt: null,
+  list: publicProcedure.input(taskListSchema).query(async ({ ctx, input }) => {
+    const tasks = await ctx.prisma.task.findMany({
+      where: {
+        teamId: input.teamId,
+        status: input.status,
+        deletedAt: null,
+      },
+      include: {
+        assignee: {
+          select: userPublicSelect,
         },
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-      })
+      },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+    })
 
-      return tasks
-    }),
+    return tasks
+  }),
 
   getById: publicProcedure
     .input(z.object({ taskId: z.string() }))
     .query(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.findUnique({
         where: { id: input.taskId },
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          team: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
+        select: taskWithRelationsSelect,
       })
 
       if (!task || task.deletedAt) {
@@ -65,16 +42,7 @@ export const taskRouter = router({
     }),
 
   create: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1),
-        description: z.string().optional(),
-        status: taskStatusEnum.default('todo'),
-        priority: taskPriorityEnum.default('medium'),
-        teamId: z.string(),
-        assigneeId: z.string().optional(),
-      }),
-    )
+    .input(taskInputSchema)
     .mutation(async ({ ctx, input }) => {
       // Get the max order for this team
       const maxOrder = await ctx.prisma.task.findFirst({
@@ -88,15 +56,7 @@ export const taskRouter = router({
           ...input,
           order: (maxOrder?.order ?? -1) + 1,
         },
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
+        select: taskWithAssigneeSelect,
       })
 
       return task
@@ -108,8 +68,8 @@ export const taskRouter = router({
         taskId: z.string(),
         title: z.string().min(1).optional(),
         description: z.string().optional(),
-        status: taskStatusEnum.optional(),
-        priority: taskPriorityEnum.optional(),
+        status: z.enum(['todo', 'in_progress', 'done']).optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
         assigneeId: z.string().nullable().optional(),
       }),
     )
@@ -119,15 +79,7 @@ export const taskRouter = router({
       const task = await ctx.prisma.task.update({
         where: { id: taskId },
         data,
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
+        select: taskWithAssigneeSelect,
       })
 
       return task
@@ -146,12 +98,7 @@ export const taskRouter = router({
     }),
 
   reorder: publicProcedure
-    .input(
-      z.object({
-        taskId: z.string(),
-        newOrder: z.number(),
-      }),
-    )
+    .input(taskReorderSchema)
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.update({
         where: { id: input.taskId },
