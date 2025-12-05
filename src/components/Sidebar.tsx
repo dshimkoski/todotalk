@@ -19,14 +19,21 @@ export function Sidebar({ user, teams }: SidebarProps) {
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [pendingTeamId, setPendingTeamId] = useState<string | null>(null)
   const currentTeamId = searchParams.get('team') || teams[0]?.id || ''
   const view = searchParams.get('view') || 'todos'
 
   const handleTeamChange = (teamId: string) => {
+    setPendingTeamId(teamId)
     startTransition(() => {
       router.push(`/dashboard?team=${teamId}&view=${view}`)
       setIsMobileMenuOpen(false)
     })
+  }
+
+  // Clear pending team when transition completes
+  if (!isPending && pendingTeamId) {
+    setPendingTeamId(null)
   }
 
   const handleTeamHover = (teamId: string) => {
@@ -114,7 +121,7 @@ export function Sidebar({ user, teams }: SidebarProps) {
                       {team.name[0]?.toUpperCase()}
                     </span>
                     <span className="flex-1 truncate">{team.name}</span>
-                    {isPending && currentTeamId === team.id && (
+                    {pendingTeamId === team.id && (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 dark:border-gray-600 dark:border-t-blue-400"></div>
                     )}
                   </div>
