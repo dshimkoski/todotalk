@@ -49,6 +49,8 @@ model TeamMember {
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([userId, teamId])
+  @@index([userId]) // Efficient user team lookups
+  @@index([teamId]) // Efficient team member list
   @@map("team_members")
 }
 
@@ -68,8 +70,10 @@ model Task {
   team     Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   assignee User? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
 
-  @@index([teamId, status])
-  @@index([assigneeId])
+  // Optimized indexes for common query patterns
+  @@index([teamId, deletedAt, order]) // List tasks with soft delete filter + ordering
+  @@index([teamId, status, deletedAt]) // Filter by status with soft delete
+  @@index([assigneeId, deletedAt]) // User's assigned tasks
   @@map("tasks")
 }
 
@@ -84,6 +88,8 @@ model Message {
   team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  @@index([teamId, createdAt])
+  // Optimized for descending pagination queries
+  @@index([teamId, createdAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)]) // User's message history
   @@map("messages")
 }
