@@ -18,7 +18,7 @@ COPY . .
 
 # Generate Prisma Client (needs DATABASE_URL for Prisma 7 config)
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
-RUN npx prisma generate --config prisma/prisma.config.ts
+RUN npx prisma generate
 
 # Build the Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -45,6 +45,7 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Copy Prisma and seed dependencies
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
 
 # Standalone includes most runtime deps, but not CLI tools
