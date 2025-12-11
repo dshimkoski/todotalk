@@ -42,9 +42,8 @@ RUN apk add --no-cache openssl
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Only copy public if it has content (Next.js may generate it during build)
+# Create public directory (might be empty, but Next.js expects it)
 RUN mkdir -p ./public
-COPY --from=builder --chown=nextjs:nodejs /app/public/* ./public/ || true
 
 # Copy Prisma and seed dependencies
 COPY --from=builder /app/prisma ./prisma
