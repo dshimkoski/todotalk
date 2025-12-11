@@ -39,7 +39,9 @@ RUN adduser --system --uid 1001 nextjs
 RUN apk add --no-cache openssl
 
 # Copy necessary files from builder
-COPY --from=builder /app/public ./public
+# Public directory might be empty, so create it first
+RUN mkdir -p ./public
+COPY --from=builder /app/public ./public 2>/dev/null || true
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
