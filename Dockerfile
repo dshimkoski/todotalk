@@ -39,11 +39,12 @@ RUN adduser --system --uid 1001 nextjs
 RUN apk add --no-cache openssl
 
 # Copy necessary files from builder
-# Public directory might be empty, so create it first
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Only copy public if it has content (Next.js may generate it during build)
 RUN mkdir -p ./public
-COPY --from=builder /app/public ./public 2>/dev/null || true
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public/* ./public/ || true
 
 # Copy Prisma and seed dependencies
 COPY --from=builder /app/prisma ./prisma
