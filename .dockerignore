@@ -5,6 +5,7 @@
 !src/
 !public/
 !prisma/
+!scripts/
 !prisma.config.ts
 !package.json
 !package-lock.json
