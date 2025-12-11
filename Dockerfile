@@ -49,6 +49,7 @@ RUN mkdir -p ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/scripts ./scripts
 
 # Standalone includes most runtime deps, but not CLI tools
 # Copy full node_modules for migrations/seeding (Prisma 7 has many deps)
